@@ -12,6 +12,10 @@ import re
 from soynlp.tokenizer import RegexTokenizer
 import os
 
+# 기본 샘플 값
+SAMPLE_URL = "https://youtu.be/jX2jKPfN8ZY?feature=shared"
+SAMPLE_API_KEY = "AIzaSyCXFOmHGiXDJ2HvDpUC-d7QxdZ_EAxLov4"
+
 # 댓글 수집 함수
 
 def extract_video_id(url):
@@ -74,11 +78,17 @@ def extract_nouns(comments):
 # 스트림릿 앱
 st.title("YouTube 댓글 분석기")
 
-youtube_url = st.text_input("YouTube 영상 URL 입력")
-api_key = st.text_input("API 키 입력")
+youtube_url = st.text_input("YouTube 영상 URL 입력", SAMPLE_URL)
+api_key = st.text_input("API 키 입력", SAMPLE_API_KEY)
 submit = st.button("분석 시작")
 
-if submit and youtube_url and api_key:
+# 기본값이면 자동 실행 (사용자가 입력한 것처럼 동작)
+if youtube_url == SAMPLE_URL and api_key == SAMPLE_API_KEY:
+    trigger = True
+else:
+    trigger = submit
+
+if trigger:
     with st.spinner("댓글 수집 중..."):
         comments, timestamps = get_comments(youtube_url, api_key)
         if not comments:
@@ -92,7 +102,6 @@ if submit and youtube_url and api_key:
         df_freq = pd.DataFrame(word_freq.items(), columns=["단어", "빈도수"]).sort_values(by="빈도수", ascending=False)
 
     st.subheader("워드 클라우드")
-    # 프로젝트 내 포함된 NanumGothicCoding 폰트 파일 사용
     font_path = os.path.join("fonts", "NanumGothicCoding.ttf")
     if not os.path.exists(font_path):
         st.warning("⚠️ 'fonts/NanumGothicCoding.ttf' 경로에 폰트 파일이 없습니다. 한글이 깨질 수 있습니다.")
@@ -117,3 +126,5 @@ if submit and youtube_url and api_key:
     hourly_counts = df.groupby("hour").size().reset_index(name="댓글 수")
     fig2 = px.bar(hourly_counts, x="hour", y="댓글 수", title="시간대별 댓글 빈도")
     st.plotly_chart(fig2)
+else:
+    st.info("⬆️ 샘플 URL과 API 키를 그대로 두면 자동으로 결과가 표시됩니다. 다른 입력을 하려면 값을 수정하고 '분석 시작'을 눌러주세요.")
