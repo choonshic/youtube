@@ -3,7 +3,6 @@ import streamlit as st
 import pandas as pd
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
-from konlpy.tag import Okt
 from wordcloud import WordCloud
 import matplotlib.pyplot as plt
 from collections import Counter
@@ -11,6 +10,7 @@ import plotly.express as px
 from datetime import datetime
 from transformers import pipeline
 import re
+from soynlp.tokenizer import RegexTokenizer
 
 # 댓글 수집 함수
 
@@ -62,14 +62,14 @@ def get_comments(youtube_url, api_key):
         st.code(error_content, language="json")
         return [], []
 
-# 형태소 분석
+# 형태소 분석 (JVM 없이 동작하는 soynlp 기반)
 @st.cache_data
 def extract_nouns(comments):
-    okt = Okt()
+    tokenizer = RegexTokenizer()
     nouns = []
     for comment in comments:
-        nouns += okt.nouns(comment)
-    return [noun for noun in nouns if len(noun) > 1]
+        nouns += tokenizer.tokenize(comment)
+    return [word for word in nouns if len(word) > 1]
 
 # 감성 분석
 @st.cache_resource
