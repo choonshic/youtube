@@ -8,11 +8,9 @@ import matplotlib.pyplot as plt
 from collections import Counter
 import plotly.express as px
 from datetime import datetime
-from transformers import pipeline
 import re
 from soynlp.tokenizer import RegexTokenizer
 import os
-from PIL import ImageFont  # 추가
 
 # 댓글 수집 함수
 
@@ -73,14 +71,6 @@ def extract_nouns(comments):
         nouns += tokenizer.tokenize(comment)
     return [word for word in nouns if len(word) > 1]
 
-# 감성 분석
-@st.cache_resource
-def load_sentiment_model():
-    return pipeline("sentiment-analysis", model="nlptown/bert-base-multilingual-uncased-sentiment")
-
-def run_sentiment_analysis(comments, model):
-    return model(comments)
-
 # 스트림릿 앱
 st.title("YouTube 댓글 분석기")
 
@@ -126,10 +116,3 @@ if submit and youtube_url and api_key:
     hourly_counts = df.groupby("hour").size().reset_index(name="댓글 수")
     fig2 = px.bar(hourly_counts, x="hour", y="댓글 수", title="시간대별 댓글 빈도")
     st.plotly_chart(fig2)
-
-    st.subheader("댓글 감성 분석")
-    model = load_sentiment_model()
-    results = run_sentiment_analysis(comments[:100], model)  # API 제한 대비 100개만
-    df_sentiment = pd.DataFrame(results)
-    df_sentiment["comment"] = comments[:100]
-    st.dataframe(df_sentiment[["comment", "label", "score"]])
