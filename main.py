@@ -11,6 +11,7 @@ from datetime import datetime
 from transformers import pipeline
 import re
 from soynlp.tokenizer import RegexTokenizer
+import os
 
 # 댓글 수집 함수
 
@@ -100,7 +101,11 @@ if submit and youtube_url and api_key:
         df_freq = pd.DataFrame(word_freq.items(), columns=["단어", "빈도수"]).sort_values(by="빈도수", ascending=False)
 
     st.subheader("워드 클라우드")
-    wc = WordCloud(font_path="/usr/share/fonts/truetype/nanum/NanumGothic.ttf", background_color="white", width=800, height=400)
+    # NanumBarunGothic 폰트 사용
+    font_path = "/usr/share/fonts/truetype/nanum/NanumBarunGothic.ttf"
+    if not os.path.exists(font_path):
+        font_path = None
+    wc = WordCloud(font_path=font_path, background_color="white", width=800, height=400)
     wc.generate_from_frequencies(word_freq)
     fig, ax = plt.subplots()
     ax.imshow(wc, interpolation="bilinear")
