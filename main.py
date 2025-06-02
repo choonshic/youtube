@@ -12,12 +12,11 @@ import re
 from soynlp.tokenizer import RegexTokenizer
 import os
 
-# 기본 샘플 값
+# 기본 샘플 값 (코드 내부에서만 사용)
 SAMPLE_URL = "https://youtu.be/jX2jKPfN8ZY?feature=shared"
 SAMPLE_API_KEY = "AIzaSyCXFOmHGiXDJ2HvDpUC-d7QxdZ_EAxLov4"
 
 # 댓글 수집 함수
-
 def extract_video_id(url):
     patterns = [
         r"(?:https?://)?(?:www\.)?youtube\.com/watch\?v=([\w-]+)",
@@ -78,19 +77,22 @@ def extract_nouns(comments):
 # 스트림릿 앱
 st.title("YouTube 댓글 분석기")
 
-youtube_url = st.text_input("YouTube 영상 URL 입력", SAMPLE_URL)
-api_key = st.text_input("API 키 입력", SAMPLE_API_KEY)
+st.info("⬆️ 유튜브 영상 URL과 API 키를 입력하거나, 아무것도 입력하지 않으면 샘플로 자동 실행됩니다.")
+
+youtube_url = st.text_input("YouTube 영상 URL 입력")
+api_key = st.text_input("API 키 입력", type="password")
 submit = st.button("분석 시작")
 
-# 기본값이면 자동 실행 (사용자가 입력한 것처럼 동작)
-if youtube_url == SAMPLE_URL and api_key == SAMPLE_API_KEY:
-    trigger = True
-else:
-    trigger = submit
+# 입력값 없으면 샘플 사용
+url_to_use = youtube_url.strip() if youtube_url else SAMPLE_URL
+key_to_use = api_key.strip() if api_key else SAMPLE_API_KEY
+
+# 자동 실행 조건
+trigger = (not youtube_url and not api_key) or submit
 
 if trigger:
     with st.spinner("댓글 수집 중..."):
-        comments, timestamps = get_comments(youtube_url, api_key)
+        comments, timestamps = get_comments(url_to_use, key_to_use)
         if not comments:
             st.stop()
         df = pd.DataFrame({"comment": comments, "timestamp": timestamps})
@@ -126,5 +128,3 @@ if trigger:
     hourly_counts = df.groupby("hour").size().reset_index(name="댓글 수")
     fig2 = px.bar(hourly_counts, x="hour", y="댓글 수", title="시간대별 댓글 빈도")
     st.plotly_chart(fig2)
-else:
-    st.info("⬆️ 샘플 URL과 API 키를 그대로 두면 자동으로 결과가 표시됩니다. 다른 입력을 하려면 값을 수정하고 '분석 시작'을 눌러주세요.")
