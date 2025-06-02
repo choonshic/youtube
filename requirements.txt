@@ -1,0 +1,9 @@
+streamlit
+pandas
+google-api-python-client
+konlpy
+wordcloud
+matplotlib
+plotly
+transformers
+torch
