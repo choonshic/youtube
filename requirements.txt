@@ -1,7 +1,8 @@
+# requirements.txt
 streamlit
 pandas
 google-api-python-client
-konlpy
+soynlp
 wordcloud
 matplotlib
 plotly
