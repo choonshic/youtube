@@ -2,6 +2,7 @@
 import streamlit as st
 import pandas as pd
 from googleapiclient.discovery import build
+from googleapiclient.errors import HttpError
 from konlpy.tag import Okt
 from wordcloud import WordCloud
 import matplotlib.pyplot as plt
@@ -12,31 +13,35 @@ from transformers import pipeline
 
 # 댓글 수집 함수
 def get_comments(youtube_url, api_key):
-    video_id = youtube_url.split("v=")[-1].split("&")[0]
-    youtube = build("youtube", "v3", developerKey=api_key)
-    comments, timestamps = [], []
-    next_page_token = None
+    try:
+        video_id = youtube_url.split("v=")[-1].split("&")[0]
+        youtube = build("youtube", "v3", developerKey=api_key)
+        comments, timestamps = [], []
+        next_page_token = None
 
-    while True:
-        response = youtube.commentThreads().list(
-            part="snippet",
-            videoId=video_id,
-            maxResults=100,
-            pageToken=next_page_token,
-            textFormat="plainText"
-        ).execute()
+        while True:
+            response = youtube.commentThreads().list(
+                part="snippet",
+                videoId=video_id,
+                maxResults=100,
+                pageToken=next_page_token,
+                textFormat="plainText"
+            ).execute()
 
-        for item in response["items"]:
-            snippet = item["snippet"]["topLevelComment"]["snippet"]
-            comments.append(snippet["textDisplay"])
-            timestamps.append(snippet["publishedAt"])
+            for item in response["items"]:
+                snippet = item["snippet"]["topLevelComment"]["snippet"]
+                comments.append(snippet["textDisplay"])
+                timestamps.append(snippet["publishedAt"])
 
-        if "nextPageToken" in response:
-            next_page_token = response["nextPageToken"]
-        else:
-            break
+            if "nextPageToken" in response:
+                next_page_token = response["nextPageToken"]
+            else:
+                break
 
-    return comments, timestamps
+        return comments, timestamps
+    except HttpError as e:
+        st.error("❌ YouTube API 요청 중 오류가 발생했습니다. API 키 또는 URL을 확인해주세요.")
+        return [], []
 
 # 형태소 분석
 @st.cache_data
@@ -59,11 +64,14 @@ def run_sentiment_analysis(comments, model):
 st.title("YouTube 댓글 분석기")
 
 youtube_url = st.text_input("YouTube 영상 URL 입력")
-api_key = st.text_input("API 키 입력", type="password")
+api_key = st.text_input("API 키 입력")  # type="password" 제거
+submit = st.button("분석 시작")
 
-if youtube_url and api_key:
+if submit and youtube_url and api_key:
     with st.spinner("댓글 수집 중..."):
         comments, timestamps = get_comments(youtube_url, api_key)
+        if not comments:
+            st.stop()
         df = pd.DataFrame({"comment": comments, "timestamp": timestamps})
         df["timestamp"] = pd.to_datetime(df["timestamp"])
 
