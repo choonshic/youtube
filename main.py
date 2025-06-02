@@ -10,11 +10,28 @@ from collections import Counter
 import plotly.express as px
 from datetime import datetime
 from transformers import pipeline
+import re
 
 # 댓글 수집 함수
+
+def extract_video_id(url):
+    patterns = [
+        r"(?:https?://)?(?:www\.)?youtube\.com/watch\?v=([\w-]+)",
+        r"(?:https?://)?youtu\.be/([\w-]+)"
+    ]
+    for pattern in patterns:
+        match = re.search(pattern, url)
+        if match:
+            return match.group(1)
+    return None
+
 def get_comments(youtube_url, api_key):
     try:
-        video_id = youtube_url.split("v=")[-1].split("&")[0]
+        video_id = extract_video_id(youtube_url)
+        if not video_id:
+            st.error("❌ 유효한 YouTube 영상 URL이 아닙니다.")
+            return [], []
+
         youtube = build("youtube", "v3", developerKey=api_key)
         comments, timestamps = [], []
         next_page_token = None
@@ -40,7 +57,9 @@ def get_comments(youtube_url, api_key):
 
         return comments, timestamps
     except HttpError as e:
-        st.error("❌ YouTube API 요청 중 오류가 발생했습니다. API 키 또는 URL을 확인해주세요.")
+        error_content = e.content.decode("utf-8") if hasattr(e, "content") else str(e)
+        st.error("❌ YouTube API 요청 중 오류가 발생했습니다. 오류 메시지를 확인하세요.")
+        st.code(error_content, language="json")
         return [], []
 
 # 형태소 분석
@@ -64,7 +83,7 @@ def run_sentiment_analysis(comments, model):
 st.title("YouTube 댓글 분석기")
 
 youtube_url = st.text_input("YouTube 영상 URL 입력")
-api_key = st.text_input("API 키 입력")  # type="password" 제거
+api_key = st.text_input("API 키 입력")
 submit = st.button("분석 시작")
 
 if submit and youtube_url and api_key:
