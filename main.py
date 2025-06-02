@@ -92,9 +92,10 @@ if submit and youtube_url and api_key:
         df_freq = pd.DataFrame(word_freq.items(), columns=["단어", "빈도수"]).sort_values(by="빈도수", ascending=False)
 
     st.subheader("워드 클라우드")
-    # NanumBarunGothic 폰트 사용 시 예외 처리 추가
-    font_path = "/usr/share/fonts/truetype/nanum/NanumBarunGothic.ttf"
+    # 프로젝트 내 포함된 NanumGothicCoding 폰트 파일 사용
+    font_path = os.path.join("fonts", "NanumGothicCoding.ttf")
     if not os.path.exists(font_path):
+        st.warning("⚠️ 'fonts/NanumGothicCoding.ttf' 경로에 폰트 파일이 없습니다. 한글이 깨질 수 있습니다.")
         font_path = None
     try:
         wc = WordCloud(font_path=font_path, background_color="white", width=800, height=400)
