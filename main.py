@@ -12,6 +12,7 @@ from transformers import pipeline
 import re
 from soynlp.tokenizer import RegexTokenizer
 import os
+from PIL import ImageFont  # 추가
 
 # 댓글 수집 함수
 
@@ -101,16 +102,20 @@ if submit and youtube_url and api_key:
         df_freq = pd.DataFrame(word_freq.items(), columns=["단어", "빈도수"]).sort_values(by="빈도수", ascending=False)
 
     st.subheader("워드 클라우드")
-    # NanumBarunGothic 폰트 사용
+    # NanumBarunGothic 폰트 사용 시 예외 처리 추가
     font_path = "/usr/share/fonts/truetype/nanum/NanumBarunGothic.ttf"
     if not os.path.exists(font_path):
         font_path = None
-    wc = WordCloud(font_path=font_path, background_color="white", width=800, height=400)
-    wc.generate_from_frequencies(word_freq)
-    fig, ax = plt.subplots()
-    ax.imshow(wc, interpolation="bilinear")
-    ax.axis("off")
-    st.pyplot(fig)
+    try:
+        wc = WordCloud(font_path=font_path, background_color="white", width=800, height=400)
+        wc.generate_from_frequencies(word_freq)
+        fig, ax = plt.subplots()
+        ax.imshow(wc, interpolation="bilinear")
+        ax.axis("off")
+        st.pyplot(fig)
+    except OSError as e:
+        st.error("❌ 워드클라우드 생성 중 오류 발생: 폰트 파일이 유효하지 않거나 로드할 수 없습니다.")
+        st.code(str(e))
 
     st.subheader("단어 빈도수 상위 20개")
     st.dataframe(df_freq.head(20))
